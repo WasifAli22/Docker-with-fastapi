@@ -1,7 +1,7 @@
 # main.py
 from contextlib import asynccontextmanager
 from typing import Union, Optional, Annotated
-from app.settings import DATABASE_URL
+from app.settings import DATABASE_URL,TEST_DATABASE_URL
 from sqlmodel import Field, Session, SQLModel, create_engine, select, delete
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,8 +18,9 @@ connection_string = str(DATABASE_URL).replace(
 
 # recycle connections after 5 minutes
 # to correspond with the compute scale down
+# Disabling SSL for local development. It cause issues with the database connection
 engine = create_engine(
-    connection_string, connect_args={"sslmode": "require"}, pool_recycle=300,
+    connection_string, connect_args={"sslmode": "disable"}, pool_recycle=300,
     # echo=True
 )
 
@@ -40,12 +41,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan, title="Hello World API with DB", 
     version="0.0.1",
-    servers=[
-        {
-            "url": "http://localhost:8000/", # ADD NGROK URL Here Before Creating GPT Action
-            "description": "Development Server"
-        }
-        ])
+    # Comment servers to avoid CORS error. This is optional.
+    # servers=[
+    #     {
+    #         "url": "http://localhost:8000/", # ADD NGROK URL Here Before Creating GPT Action
+    #         "description": "Development Server"
+    #     }
+    #     ]
+    )
 
 app.add_middleware(
     CORSMiddleware,
